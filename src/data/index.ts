@@ -2,12 +2,9 @@ import { IndexedDBRepository } from './indexeddb';
 import { MemoryRepository } from './memory';
 import type { Repository } from './repository';
 import type { SyncedRepository } from './sync';
+import { firebaseConfig } from './firebase-config';
 
-// Referencias literales: Next.js las sustituye en el build.
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-export const syncAvailable = !!(SUPABASE_URL && SUPABASE_KEY);
+export const syncAvailable = !!firebaseConfig;
 
 let sync: SyncedRepository | null = null;
 export const getSync = () => sync;
@@ -25,8 +22,8 @@ export async function createRepository(): Promise<Repository> {
   }
   if (!syncAvailable) return local;
   try {
-    const [{ createClient }, { SyncedRepository }] = await Promise.all([import('@supabase/supabase-js'), import('./sync')]);
-    sync = new SyncedRepository(local, createClient(SUPABASE_URL!, SUPABASE_KEY!, { auth: { persistSession: true, autoRefreshToken: true } }));
+    const [{ createFirebaseBackend }, { SyncedRepository }] = await Promise.all([import('./firebase'), import('./sync')]);
+    sync = new SyncedRepository(local, createFirebaseBackend(firebaseConfig!));
     sync.start().catch(() => undefined);
     return sync;
   } catch {

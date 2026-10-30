@@ -12,7 +12,7 @@
     "preview": "node scripts/build-preview.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.4",
+    "firebase": "^12.2.1",
     "next": "^15.5.28",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

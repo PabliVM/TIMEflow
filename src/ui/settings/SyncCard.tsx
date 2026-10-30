@@ -64,8 +64,7 @@ export function SyncCard() {
             disabled={!valid || busy}
             onClick={() =>
               run(async () => {
-                const needsConfirm = await sync.signUp(email, password);
-                setMsg({ ok: true, text: needsConfirm ? 'Cuenta creada. Confirma el email que te hemos enviado y después pulsa Entrar.' : 'Cuenta creada.' });
+                await sync.signUp(email, password);
               })
             }
           >

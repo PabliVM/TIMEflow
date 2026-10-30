@@ -8,7 +8,8 @@ export interface RemoteRow {
   id: string;
   data: unknown;
   deleted: boolean;
-  updated_at: string;
+  /** Marca de servidor opaca para la descarga incremental. */
+  cursor: string;
 }
 
 export const recordId = (store: StoreName, value: { id?: string; entryId?: string }) =>

@@ -16,9 +16,10 @@ const js = await build({
   target: 'es2020',
   define: {
     'process.env.NODE_ENV': '"production"',
-    'process.env.NEXT_PUBLIC_SUPABASE_URL': 'undefined',
-    'process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY': 'undefined',
-    'process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY': 'undefined',
+    'process.env.NEXT_PUBLIC_FIREBASE_API_KEY': 'undefined',
+    'process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN': 'undefined',
+    'process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID': 'undefined',
+    'process.env.NEXT_PUBLIC_FIREBASE_APP_ID': 'undefined',
   },
 });
 execSync('npx tailwindcss -i src/app/globals.css -o preview/app.css --minify', { stdio: 'inherit' });

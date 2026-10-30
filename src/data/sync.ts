@@ -1,4 +1,3 @@
-import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import type { Snapshot } from '@/domain/types';
 import { mergeIntoRemote, recordId, rowsToOps, rowsToSnapshot, snapshotOps } from './merge';
 import type { RemoteRow } from './merge';
@@ -75,6 +74,24 @@ class SyncStore {
   }
 }
 
+/* ---------- Servidor remoto (Firebase u otro): contrato mínimo ---------- */
+
+export interface RemoteUser {
+  id: string;
+  email: string | null;
+}
+
+export interface RemoteBackend {
+  currentUser(): Promise<RemoteUser | null>;
+  onUserChange(cb: (u: RemoteUser | null) => void): void;
+  signIn(email: string, password: string): Promise<void>;
+  signUp(email: string, password: string): Promise<void>;
+  signOut(): Promise<void>;
+  /** Filas del usuario posteriores al cursor, en orden de servidor. */
+  fetch(uid: string, since?: string): Promise<RemoteRow[]>;
+  upsert(uid: string, rows: { store: string; id: string; data: unknown; deleted: boolean }[]): Promise<void>;
+}
+
 /* ---------- Estado visible en la UI ---------- */
 
 export interface SyncStatus {
@@ -84,6 +101,9 @@ export interface SyncStatus {
   pending: number;
   error?: string;
 }
+
+/** Cursor de "sincronizado desde el principio" cuando la nube estaba vacía. */
+const START = '0';
 
 const toItem = (op: Op): OutboxItem => {
   const id = op.type === 'put' ? recordId(op.store, op.value) : op.key;
@@ -98,20 +118,20 @@ const toItem = (op: Op): OutboxItem => {
 };
 
 /**
- * Repositorio local-first: escribe en IndexedDB al instante y sincroniza con Supabase
- * en segundo plano (cola de pendientes + descarga incremental por updated_at).
+ * Repositorio local-first: escribe en IndexedDB al instante y sincroniza con el servidor
+ * en segundo plano (cola de pendientes + descarga incremental por cursor).
  */
 export class SyncedRepository implements Repository {
   readonly kind = 'synced';
   private store: SyncStore;
-  private session: Session | null = null;
+  private user: RemoteUser | null = null;
   private dataListeners = new Set<() => void>();
   private statusListeners = new Set<(s: SyncStatus) => void>();
   private running: Promise<void> | null = null;
   private again = false;
   status: SyncStatus = { email: null, state: 'signed-out', pending: 0 };
 
-  constructor(private local: Repository, private client: SupabaseClient, factory: IDBFactory = indexedDB) {
+  constructor(private local: Repository, private backend: RemoteBackend, factory: IDBFactory = indexedDB) {
     this.store = new SyncStore(factory);
   }
 
@@ -122,16 +142,16 @@ export class SyncedRepository implements Repository {
   }
 
   async apply(ops: Op[]) {
-    if (this.session) await this.store.enqueue(ops.map(toItem));
+    if (this.user) await this.store.enqueue(ops.map(toItem));
     await this.local.apply(ops);
-    if (this.session) this.schedule();
+    if (this.user) this.schedule();
   }
 
   async replaceAll(s: Snapshot) {
     await this.local.replaceAll(s);
-    if (!this.session) return;
+    if (!this.user) return;
     // Importación completa: la nube debe quedar igual que el dispositivo.
-    const remote = await this.fetchRows();
+    const remote = await this.backend.fetch(this.user.id);
     const keep = new Set(snapshotOps(s).map((o) => toItem(o).key));
     const deletes: Op[] = remote
       .filter((r) => !r.deleted && !keep.has(`${r.store}|${r.id}`))
@@ -159,41 +179,34 @@ export class SyncedRepository implements Repository {
   }
 
   async start() {
-    const { data } = await this.client.auth.getSession();
-    await this.setSession(data.session);
-    this.client.auth.onAuthStateChange((_e, session) => {
-      if (session?.user.id !== this.session?.user.id) this.setSession(session);
-      else this.session = session;
-    });
+    this.setUser(await this.backend.currentUser());
+    this.backend.onUserChange((u) => u?.id !== this.user?.id && this.setUser(u));
     if (typeof window === 'undefined') return;
-    const kick = () => this.session && this.schedule();
+    const kick = () => this.user && this.schedule();
     window.addEventListener('online', kick);
     document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && kick());
     setInterval(() => document.visibilityState === 'visible' && kick(), 60_000);
   }
 
-  private async setSession(session: Session | null) {
-    this.session = session;
-    if (!session) return this.setStatus({ email: null, state: 'signed-out', pending: 0, error: undefined });
-    this.setStatus({ email: session.user.email ?? null, state: 'syncing', error: undefined });
+  private setUser(u: RemoteUser | null) {
+    this.user = u;
+    if (!u) return this.setStatus({ email: null, state: 'signed-out', pending: 0, error: undefined });
+    this.setStatus({ email: u.email, state: 'syncing', error: undefined });
     this.schedule();
   }
 
-  async signIn(email: string, password: string) {
-    const { error } = await this.client.auth.signInWithPassword({ email, password });
-    if (error) throw new Error(error.message === 'Invalid login credentials' ? 'Email o contraseña incorrectos.' : error.message);
+  signIn(email: string, password: string) {
+    return this.backend.signIn(email, password);
   }
 
-  /** Devuelve true si la cuenta requiere confirmar el email antes de entrar. */
-  async signUp(email: string, password: string): Promise<boolean> {
-    const { data, error } = await this.client.auth.signUp({ email, password, options: { emailRedirectTo: location.origin } });
-    if (error) throw new Error(error.message);
-    return !data.session;
+  signUp(email: string, password: string) {
+    return this.backend.signUp(email, password);
   }
 
   async signOut() {
-    const uid = this.session?.user.id;
-    await this.client.auth.signOut();
+    const uid = this.user?.id;
+    await this.backend.signOut();
+    this.setUser(null);
     if (uid) await this.store.set(`cursor:${uid}`, null);
     await this.store.clearOutbox();
   }
@@ -221,7 +234,7 @@ export class SyncedRepository implements Repository {
   }
 
   private async run() {
-    const uid = this.session?.user.id;
+    const uid = this.user?.id;
     if (!uid) return;
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       this.setStatus({ state: 'offline', pending: (await this.store.outbox()).length });
@@ -238,26 +251,13 @@ export class SyncedRepository implements Repository {
     }
   }
 
-  private async fetchRows(since?: string): Promise<RemoteRow[]> {
-    const out: RemoteRow[] = [];
-    const PAGE = 1000;
-    for (let from = 0; ; from += PAGE) {
-      let q = this.client.from('records').select('store,id,data,deleted,updated_at').order('updated_at', { ascending: true }).range(from, from + PAGE - 1);
-      if (since) q = q.gt('updated_at', since);
-      const { data, error } = await q;
-      if (error) throw new Error(error.message);
-      out.push(...(data as RemoteRow[]));
-      if (!data || data.length < PAGE) return out;
-    }
-  }
-
   private notify() {
     this.dataListeners.forEach((l) => l());
   }
 
   /** Primer inicio de sesión en este dispositivo. */
   private async firstSync(uid: string) {
-    const rows = await this.fetchRows();
+    const rows = await this.backend.fetch(uid);
     const local = await this.local.loadAll();
     const live = rows.filter((r) => !r.deleted);
     if (local && !live.length) {
@@ -274,25 +274,21 @@ export class SyncedRepository implements Repository {
       }
       this.notify();
     }
-    const cursor = rows.reduce((m, r) => (r.updated_at > m ? r.updated_at : m), '1970-01-01T00:00:00Z');
-    await this.store.set(`cursor:${uid}`, cursor);
+    await this.store.set(`cursor:${uid}`, rows.length ? rows[rows.length - 1].cursor : START);
   }
 
   private async push(uid: string) {
     const items = await this.store.outbox();
     for (let i = 0; i < items.length; i += 500) {
       const chunk = items.slice(i, i + 500);
-      const { error } = await this.client
-        .from('records')
-        .upsert(chunk.map((it) => ({ user_id: uid, store: it.store, id: it.id, data: it.data, deleted: it.deleted })), { onConflict: 'user_id,store,id' });
-      if (error) throw new Error(error.message);
+      await this.backend.upsert(uid, chunk.map(({ store, id, data, deleted }) => ({ store, id, data, deleted })));
       await this.store.ack(chunk);
     }
   }
 
   private async pull(uid: string) {
     const cursor = await this.store.get(`cursor:${uid}`);
-    const rows = await this.fetchRows(cursor);
+    const rows = await this.backend.fetch(uid, cursor === START ? undefined : cursor);
     if (!rows.length) return;
     const pending = new Set((await this.store.outbox()).map((i) => i.key));
     const ops = rowsToOps(rows.filter((r) => !pending.has(`${r.store}|${r.id}`)));
@@ -300,6 +296,6 @@ export class SyncedRepository implements Repository {
       await this.local.apply(ops);
       this.notify();
     }
-    await this.store.set(`cursor:${uid}`, rows[rows.length - 1].updated_at);
+    await this.store.set(`cursor:${uid}`, rows[rows.length - 1].cursor);
   }
 }
