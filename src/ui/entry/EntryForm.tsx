@@ -7,7 +7,7 @@ import { uuid } from '@/domain/ids';
 import { localTimeZone, nowIso, timeOfDay, todayKey } from '@/domain/time';
 import type { EntryMethod, TimeEntry } from '@/domain/types';
 import { useStore, UserError } from '@/state/store';
-import { Button, Field, Input, Segmented, Select, Sheet, Textarea, cx } from '../primitives';
+import { Button, Field, FormSection, Input, Segmented, Select, Sheet, Textarea, cx } from '../primitives';
 import { useUI } from '../ui-context';
 import type { EntryFormRequest } from '../ui-context';
 import { HierarchyPicker } from './HierarchyPicker';
@@ -50,6 +50,19 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
   const range = start && end ? computeRange(date, start, end) : null;
   const goals = snapshot.goals.filter((g) => !g.archived || g.id === goalId);
   const timerActive = !!snapshot.timer;
+
+  const path = sel.categoryId
+    ? [
+        store.lookup.category.get(sel.categoryId)?.name,
+        sel.activityId && store.lookup.activity.get(sel.activityId)?.name,
+        sel.subs.length ? sel.subs.map((x) => store.lookup.subactivity.get(x.subactivityId)?.name).join(', ') : '',
+      ].filter(Boolean).join(' › ')
+    : 'Sin elegir';
+  const whenSummary = range
+    ? `${start}–${end}`
+    : parseClockInput(dur)
+      ? formatDuration(parseClockInput(dur)!)
+      : 'Sin indicar';
 
   const setDuration = (totalMin: number) => setDur(toClockInput(totalMin));
   const parsedDur = parseClockInput(dur);
@@ -141,6 +154,7 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
   return (
     <Sheet
       open
+      wide
       onClose={close}
       title={existing ? 'Editar registro' : 'Nuevo registro'}
       footer={
@@ -176,51 +190,59 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
           <p className="rounded-xl bg-warn/15 p-3 text-sm">Ya hay un cronómetro en marcha: finalízalo desde la barra superior para iniciar otro.</p>
         )}
 
-        {tab === 'new' && (
-          <Field label="Fecha">{(fid) => <Input id={fid} type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} />}</Field>
-        )}
+        <FormSection step={1} title="Qué has hecho" summary={path}>
+          <HierarchyPicker value={sel} onChange={setSel} />
+        </FormSection>
 
-        <HierarchyPicker value={sel} onChange={setSel} />
-
-        {tab === 'new' && (
-          <div className="flex flex-col gap-3">
-            <Field label="Duración · opcional" hint={parsedDur ? `= ${formatDuration(parsedDur)}` : 'Formato H:MM. Ej.: 130 → 1:30'}>
-              {(fid) => (
-                <Input
-                  id={fid}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  placeholder="0:00"
-                  value={dur}
-                  onChange={(e) => setDur(maskClockInput(e.target.value))}
-                  className="max-w-[10rem] text-center font-mono text-2xl tabular-nums sm:text-2xl"
-                />
-              )}
-            </Field>
-            <div className="flex flex-wrap gap-2">
-              {QUICK.map((m) => (
-                <button key={m} type="button" onClick={() => setDuration(m)} className="min-h-10 rounded-full border border-line px-3.5 text-sm hover:bg-surface2">
-                  {formatDuration(m * 60)}
-                </button>
-              ))}
+        {tab === 'new' ? (
+          <FormSection step={2} title="Cuándo y cuánto" summary={whenSummary}>
+            <Field label="Fecha">{(fid) => <Input id={fid} type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} />}</Field>
+            <p className="rounded-xl bg-surface2 px-3 py-2 text-xs text-muted">Indica la duración, el horario o ambos. Con horario, la duración se calcula sola.</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-3">
+                <Field label="Duración" hint={parsedDur ? `= ${formatDuration(parsedDur)}` : 'H:MM · ej.: 130 → 1:30'}>
+                  {(fid) => (
+                    <Input
+                      id={fid}
+                      inputMode="numeric"
+                      autoComplete="off"
+                      placeholder="0:00"
+                      value={dur}
+                      onChange={(e) => setDur(maskClockInput(e.target.value))}
+                      className="max-w-[10rem] text-center font-mono text-2xl tabular-nums sm:text-2xl"
+                    />
+                  )}
+                </Field>
+                <div className="flex flex-wrap gap-2">
+                  {QUICK.map((m) => (
+                    <button key={m} type="button" onClick={() => setDuration(m)} className="min-h-10 rounded-full border border-line px-3 text-sm hover:bg-surface2">
+                      {formatDuration(m * 60)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 border-t border-line pt-4 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Hora inicio">{(fid) => <Input id={fid} type="time" value={start} onChange={(e) => setTimes(e.target.value, end)} />}</Field>
+                  <Field label="Hora fin">{(fid) => <Input id={fid} type="time" value={end} onChange={(e) => setTimes(start, e.target.value)} />}</Field>
+                </div>
+                <p className="text-xs text-muted">
+                  {range ? (
+                    <>
+                      Intervalo <strong className="text-fg">{formatDuration(range.seconds)}</strong>
+                      {range.crossesMidnight && ' · termina al día siguiente'}. Reduce la duración para descontar interrupciones.
+                    </>
+                  ) : lockedTimes ? (
+                    'Obligatorio en registros del cronómetro.'
+                  ) : (
+                    'Opcional.'
+                  )}
+                </p>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={lockedTimes ? 'Hora inicio' : 'Hora inicio · opcional'}>{(fid) => <Input id={fid} type="time" value={start} onChange={(e) => setTimes(e.target.value, end)} />}</Field>
-              <Field label={lockedTimes ? 'Hora fin' : 'Hora fin · opcional'}>{(fid) => <Input id={fid} type="time" value={end} onChange={(e) => setTimes(start, e.target.value)} />}</Field>
-            </div>
-            {!range && <p className="text-xs text-muted">Rellena la duración, el horario o ambos.</p>}
-            {range && (
-              <p className="text-sm text-muted">
-                Intervalo <strong className="text-fg">{formatDuration(range.seconds)}</strong>
-                {range.crossesMidnight && ' · termina al día siguiente'}. Puedes reducir la duración para descontar interrupciones.
-              </p>
-            )}
-          </div>
-        )}
-
-        {tab === 'pomodoro' && (
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted">Duración</span>
+          </FormSection>
+        ) : (
+          <FormSection step={2} title="Duración del pomodoro" summary={`${pomo || 0} min`}>
             <div className="flex flex-wrap items-center gap-2">
               {snapshot.settings.pomodoroDurations.map((m) => (
                 <button
@@ -234,22 +256,23 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
               ))}
               <Input aria-label="Minutos personalizados" type="number" min={1} className="w-28" value={pomo} onChange={(e) => setPomo(e.target.value)} />
             </div>
-            <p className="text-xs text-muted">Se guarda el tiempo real trabajado. Los descansos no se suman.</p>
-          </div>
+            <p className="text-xs text-muted">Empieza ahora. Se guarda el tiempo real trabajado; los descansos no se suman.</p>
+          </FormSection>
         )}
 
-        {goals.length > 0 && (
-          <Field label="Objetivo relacionado · opcional">
-            {(fid) => (
-              <Select id={fid} value={goalId} onChange={(e) => setGoalId(e.target.value)}>
-                <option value="">Ninguno</option>
-                {goals.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </Select>
-            )}
-          </Field>
-        )}
-
-        <Field label="Notas · opcional">{(fid) => <Textarea id={fid} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />}</Field>
+        <FormSection step={3} title="Detalles" summary="opcional">
+          {goals.length > 0 && (
+            <Field label="Objetivo relacionado">
+              {(fid) => (
+                <Select id={fid} value={goalId} onChange={(e) => setGoalId(e.target.value)}>
+                  <option value="">Ninguno</option>
+                  {goals.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </Select>
+              )}
+            </Field>
+          )}
+          <Field label="Notas">{(fid) => <Textarea id={fid} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />}</Field>
+        </FormSection>
 
         {errors.length > 0 && (
           <ul className="rounded-xl bg-danger/10 p-3 text-sm text-danger" role="alert">

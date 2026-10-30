@@ -169,3 +169,17 @@ export const Dot = ({ color, className }: { color: string; className?: string })
 export function Empty({ children }: { children: ReactNode }) {
   return <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">{children}</p>;
 }
+
+/** Bloque numerado de un formulario por pasos. */
+export function FormSection({ step, title, summary, children }: { step: number; title: string; summary?: ReactNode; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-4 rounded-2xl border border-line p-4">
+      <header className="flex items-center gap-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accentfg">{step}</span>
+        <h3 className="flex-1 font-display text-base font-semibold">{title}</h3>
+        {summary && <span className="min-w-0 max-w-[55%] truncate text-right text-xs text-muted">{summary}</span>}
+      </header>
+      {children}
+    </section>
+  );
+}

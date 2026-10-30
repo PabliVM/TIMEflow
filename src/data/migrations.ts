@@ -6,9 +6,19 @@ import type { Op } from './repository';
 
 const lower = (s: string) => s.toLocaleLowerCase('es');
 
-/** v2: sustituye "Desarrollo profesional" por App RM, App PV y RM. Conserva históricos. */
+/** Ajustes de categorías sobre datos ya guardados. Idempotente. */
 export function migrationOps(s: Snapshot, now = new Date().toISOString()): Op[] {
-  if ((s.settings.seedVersion ?? 1) >= SEED_VERSION) return [];
+  const version = s.settings.seedVersion ?? 1;
+  if (version >= SEED_VERSION) return [];
+  const ops: Op[] = [];
+  if (version < 2) ops.push(...v2(s, now));
+  if (version < 3) ops.push(...v3(s, now));
+  ops.push({ type: 'put', store: 'settings', value: { ...s.settings, seedVersion: SEED_VERSION } });
+  return ops;
+}
+
+/** v2: sustituye "Desarrollo profesional" por App RM, App PV y RM. Conserva históricos. */
+function v2(s: Snapshot, now: string): Op[] {
   const ops: Op[] = [];
   const old = s.categories.find((c) => lower(c.name) === 'desarrollo profesional');
   if (old) {
@@ -37,6 +47,24 @@ export function migrationOps(s: Snapshot, now = new Date().toISOString()): Op[] 
       value: { id: uuid(), name, color, sortOrder: min - 3 + i, archived: false, createdAt: now, updatedAt: now },
     });
   });
-  ops.push({ type: 'put', store: 'settings', value: { ...s.settings, seedVersion: SEED_VERSION } });
+  return ops;
+}
+
+/** v3: categoría Casita con actividades Manuela y Laura. */
+function v3(s: Snapshot, now: string): Op[] {
+  const ops: Op[] = [];
+  let cat = s.categories.find((c) => lower(c.name) === 'casita');
+  if (!cat) {
+    const sortOrder = s.categories.reduce((m, c) => Math.max(m, c.sortOrder), -1) + 1;
+    cat = { id: uuid(), name: 'Casita', color: CATEGORY_COLORS[10], sortOrder, archived: false, createdAt: now, updatedAt: now };
+    ops.push({ type: 'put', store: 'categories', value: cat });
+  }
+  const categoryId = cat.id;
+  const acts = s.activities.filter((a) => a.categoryId === categoryId);
+  let order = acts.reduce((m, a) => Math.max(m, a.sortOrder), -1) + 1;
+  for (const name of ['Manuela', 'Laura']) {
+    if (acts.some((a) => lower(a.name) === lower(name))) continue;
+    ops.push({ type: 'put', store: 'activities', value: { id: uuid(), categoryId, name, sortOrder: order++, archived: false, createdAt: now, updatedAt: now } });
+  }
   return ops;
 }

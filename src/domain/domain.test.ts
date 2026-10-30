@@ -111,12 +111,14 @@ test('migración v2: quita Desarrollo profesional sin registros y crea App RM, A
   const { migrationOps } = await import('../data/migrations');
   const s = buildSeed();
   const legacy = { ...s, settings: { ...s.settings, seedVersion: 1 }, categories: [...s.categories, { ...s.categories[0], id: 'old', name: 'Desarrollo profesional' }] };
-  legacy.categories = legacy.categories.filter((c) => !['App RM', 'App PV', 'RM'].includes(c.name));
+  legacy.categories = legacy.categories.filter((c) => !['App RM', 'App PV', 'RM', 'Casita'].includes(c.name));
   const out = applyOps(legacy, migrationOps(legacy));
   const names = out.categories.map((c) => c.name);
   assert.ok(!names.includes('Desarrollo profesional'));
   assert.ok(['App RM', 'App PV', 'RM'].every((n) => names.includes(n)));
   assert.equal(migrationOps(out).length, 0);
+  const casita = out.categories.find((c) => c.name === 'Casita')!;
+  assert.deepEqual(out.activities.filter((a) => a.categoryId === casita.id).map((a) => a.name).sort(), ['Laura', 'Manuela']);
   const used = { ...legacy, entries: [entry({ categoryId: 'old' })] };
   const out2 = applyOps(used, migrationOps(used));
   assert.equal(out2.categories.find((c) => c.id === 'old')?.archived, true);
@@ -132,4 +134,14 @@ test('campo de duración tipo reloj', async () => {
   assert.equal(parseClockInput(''), 0);
   assert.equal(parseClockInput('1:75'), null);
   assert.equal(toClockInput(90), '1:30');
+});
+
+test('migración v3 sobre datos en v2: añade Casita sin duplicar', async () => {
+  const { migrationOps } = await import('../data/migrations');
+  const s = buildSeed();
+  const v2data = { ...s, settings: { ...s.settings, seedVersion: 2 }, categories: s.categories.filter((c) => c.name !== 'Casita') };
+  const out = applyOps(v2data, migrationOps(v2data));
+  assert.equal(out.categories.filter((c) => c.name === 'Casita').length, 1);
+  assert.equal(out.settings.seedVersion, 3);
+  assert.equal(out.categories.filter((c) => c.name === 'App RM').length, 1);
 });
