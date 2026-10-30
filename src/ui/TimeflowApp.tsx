@@ -72,7 +72,7 @@ function Shell() {
   const hasTimer = !!snapshot.timer;
 
   return (
-    <div className="min-h-dvh bg-bg text-fg lg:flex">
+    <div className="min-h-dvh text-fg lg:flex">
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-6 border-r border-line bg-surface px-4 py-6 lg:flex">
         <Logo />
         <nav className="flex flex-col gap-1">
