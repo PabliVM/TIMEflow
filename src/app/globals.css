@@ -35,7 +35,7 @@
     --accent-fg: 6 30 24;
     --danger: 238 108 98;
     --warn: 224 170 60;
-    --scrim: rgb(13 17 16 / 0.8);
+    --scrim: rgb(13 17 16 / 0.6);
     color-scheme: dark;
   }
 }
@@ -52,7 +52,7 @@
   --accent-fg: 6 30 24;
   --danger: 238 108 98;
   --warn: 224 170 60;
-  --scrim: rgb(13 17 16 / 0.8);
+  --scrim: rgb(13 17 16 / 0.6);
   color-scheme: dark;
 }
 
@@ -88,7 +88,7 @@ body::after {
 }
 
 :root[data-bg='forest'] body::after {
-  background-image: linear-gradient(var(--scrim), var(--scrim)), url('/backgrounds/bosque.svg');
+  background-image: linear-gradient(var(--scrim), var(--scrim)), url('/backgrounds/bosque.jpg');
   background-size: cover;
   background-position: center bottom;
 }
