@@ -195,25 +195,10 @@ function PrefsTab() {
           </Field>
         </div>
       </Card>
-      <Card title="Apariencia y temporizador">
+      <Card title="Apariencia y sueño">
         <div className="flex flex-col gap-4">
           <Field label="Tema">
             {() => <Segmented value={s.theme} onChange={(theme) => updateSettings({ theme })} options={[{ value: 'system', label: 'Sistema' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]} />}
-          </Field>
-          <Field label="Duraciones Pomodoro (min)">
-            {() => (
-              <div className="grid grid-cols-3 gap-2">
-                {[0, 1, 2].map((i) => (
-                  <Input key={i} aria-label={`Pomodoro ${i + 1}`} type="number" min={1} max={240} defaultValue={s.pomodoroDurations[i] ?? ''}
-                    onBlur={(e) => {
-                      const next = [...s.pomodoroDurations];
-                      const v = Math.round(Number(e.target.value));
-                      if (v > 0 && v <= 240) next[i] = v;
-                      updateSettings({ pomodoroDurations: next.filter((x) => x > 0) });
-                    }} />
-                ))}
-              </div>
-            )}
           </Field>
           <Field label="Actividad de sueño" hint="Se usa por defecto en el registro de sueño.">
             {(id) => (

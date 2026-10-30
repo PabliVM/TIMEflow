@@ -7,13 +7,12 @@ import { uuid } from '@/domain/ids';
 import { localTimeZone, nowIso, timeOfDay, todayKey } from '@/domain/time';
 import type { EntryMethod, TimeEntry } from '@/domain/types';
 import { useStore, UserError } from '@/state/store';
-import { Button, Field, FormSection, Input, Segmented, Select, Sheet, Textarea, cx } from '../primitives';
+import { Button, Field, FormSection, Input, Select, Sheet, Textarea } from '../primitives';
 import { useUI } from '../ui-context';
 import type { EntryFormRequest } from '../ui-context';
 import { HierarchyPicker } from './HierarchyPicker';
 import type { Selection } from './HierarchyPicker';
 
-type Tab = 'new' | 'pomodoro';
 const QUICK = [15, 30, 45, 60, 90];
 
 export function EntryForm() {
@@ -30,7 +29,6 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
   const lockedTimes = !!existing && (existing.method === 'timer' || existing.method === 'pomodoro');
 
   const [id] = useState(() => existing?.id ?? uuid());
-  const [tab, setTab] = useState<Tab>(req.method === 'pomodoro' && !existing ? 'pomodoro' : 'new');
   const [date, setDate] = useState(existing?.date ?? req.date ?? todayKey());
   const [sel, setSel] = useState<Selection>(() => ({
     categoryId: existing?.categoryId,
@@ -43,7 +41,6 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
   const [end, setEnd] = useState(existing?.endAt ? timeOfDay(existing.endAt) : '');
   const [goalId, setGoalId] = useState(existing?.goalId ?? '');
   const [notes, setNotes] = useState(existing?.notes ?? '');
-  const [pomo, setPomo] = useState(String(snapshot.settings.pomodoroDurations[0] ?? 25));
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -131,16 +128,13 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
   const startTimer = async () => {
     if (busy) return;
     if (!sel.categoryId) return setErrors(['Elige una categoría.']);
-    const planned = tab === 'pomodoro' ? Math.round(Number(pomo) * 60) : undefined;
-    if (tab === 'pomodoro' && !(planned! > 0 && planned! <= 24 * 3600)) return setErrors(['Duración de pomodoro no válida.']);
-    const subErr = validateEntry({ categoryId: sel.categoryId, durationSeconds: planned ?? 24 * 3600, subactivities: sel.subs });
+    const subErr = validateEntry({ categoryId: sel.categoryId, durationSeconds: 24 * 3600, subactivities: sel.subs });
     if (subErr.length) return setErrors(subErr);
     setBusy(true);
     try {
       await store.startTimer(
         { categoryId: sel.categoryId, activityId: sel.activityId, subactivities: sel.subs, goalId: goalId || undefined, notes: notes.trim() },
-        tab === 'pomodoro' ? 'pomodoro' : 'normal',
-        planned,
+        'normal',
       );
       ui.toast('Cronómetro iniciado');
       close();
@@ -158,13 +152,7 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
       onClose={close}
       title={existing ? 'Editar registro' : 'Nuevo registro'}
       footer={
-        tab === 'pomodoro' ? (
-          <>
-            <Button className="flex-1" onClick={close}>Cancelar</Button>
-            <Button className="flex-[2]" variant="primary" icon="play" onClick={startTimer} disabled={busy || timerActive}>Iniciar pomodoro</Button>
-          </>
-        ) : (
-          <>
+        <>
             <Button className="flex-1" onClick={close}>Cancelar</Button>
             {!existing && (
               <Button className="flex-1" icon="play" onClick={startTimer} disabled={busy || timerActive} title="Empieza a cronometrar ahora">
@@ -172,20 +160,10 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
               </Button>
             )}
             <Button className="flex-1" variant="primary" onClick={save} disabled={busy}>Guardar</Button>
-          </>
-        )
+        </>
       }
     >
       <div className="flex flex-col gap-5">
-        {!existing && (
-          <Segmented
-            value={tab}
-            onChange={(v) => { setTab(v); setErrors([]); }}
-            options={[{ value: 'new', label: 'Nuevo' }, { value: 'pomodoro', label: 'Pomodoro' }]}
-            size="sm"
-          />
-        )}
-
         {timerActive && !existing && (
           <p className="rounded-xl bg-warn/15 p-3 text-sm">Ya hay un cronómetro en marcha: finalízalo desde la barra superior para iniciar otro.</p>
         )}
@@ -194,8 +172,7 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
           <HierarchyPicker value={sel} onChange={setSel} />
         </FormSection>
 
-        {tab === 'new' ? (
-          <FormSection step={2} title="Cuándo y cuánto" summary={whenSummary}>
+        <FormSection step={2} title="Cuándo y cuánto" summary={whenSummary}>
             <Field label="Fecha">{(fid) => <Input id={fid} type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} />}</Field>
             <p className="rounded-xl bg-surface2 px-3 py-2 text-xs text-muted">Indica la duración, el horario o ambos. Con horario, la duración se calcula sola.</p>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -241,25 +218,6 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
               </div>
             </div>
           </FormSection>
-        ) : (
-          <FormSection step={2} title="Duración del pomodoro" summary={`${pomo || 0} min`}>
-            <div className="flex flex-wrap items-center gap-2">
-              {snapshot.settings.pomodoroDurations.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setPomo(String(m))}
-                  className={cx('min-h-11 min-w-16 rounded-xl border px-4 text-sm font-semibold', String(m) === pomo ? 'border-accent bg-accent/10 text-accent' : 'border-line')}
-                >
-                  {m} min
-                </button>
-              ))}
-              <Input aria-label="Minutos personalizados" type="number" min={1} className="w-28" value={pomo} onChange={(e) => setPomo(e.target.value)} />
-            </div>
-            <p className="text-xs text-muted">Empieza ahora. Se guarda el tiempo real trabajado; los descansos no se suman.</p>
-          </FormSection>
-        )}
-
         <FormSection step={3} title="Detalles" summary="opcional">
           {goals.length > 0 && (
             <Field label="Objetivo relacionado">
