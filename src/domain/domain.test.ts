@@ -121,3 +121,15 @@ test('migración v2: quita Desarrollo profesional sin registros y crea App RM, A
   const out2 = applyOps(used, migrationOps(used));
   assert.equal(out2.categories.find((c) => c.id === 'old')?.archived, true);
 });
+
+test('campo de duración tipo reloj', async () => {
+  const { maskClockInput, parseClockInput, toClockInput } = await import('./format');
+  assert.equal(maskClockInput('130'), '1:30');
+  assert.equal(maskClockInput('1:3'), '13');
+  assert.equal(maskClockInput('0045'), '0:45');
+  assert.equal(parseClockInput('1:30'), 5400);
+  assert.equal(parseClockInput('45'), 2700);
+  assert.equal(parseClockInput(''), 0);
+  assert.equal(parseClockInput('1:75'), null);
+  assert.equal(toClockInput(90), '1:30');
+});

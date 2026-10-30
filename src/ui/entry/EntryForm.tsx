@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { computeRange, validateEntry } from '@/domain/entries';
-import { formatDuration } from '@/domain/format';
+import { formatDuration, maskClockInput, parseClockInput, toClockInput } from '@/domain/format';
 import { uuid } from '@/domain/ids';
 import { localTimeZone, nowIso, timeOfDay, todayKey } from '@/domain/time';
 import type { EntryMethod, TimeEntry } from '@/domain/types';
@@ -38,8 +38,7 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
     subs: (existing ? (subsByEntry.get(existing.id) ?? []) : []).map((l) => ({ subactivityId: l.subactivityId, durationSeconds: l.durationSeconds })),
   }));
   const initMin = existing ? Math.round(existing.durationSeconds / 60) : 0;
-  const [hours, setHours] = useState(existing ? String(Math.floor(initMin / 60)) : '');
-  const [minutes, setMinutes] = useState(existing ? String(initMin % 60) : '');
+  const [dur, setDur] = useState(existing ? toClockInput(initMin) : '');
   const [start, setStart] = useState(existing?.startAt ? timeOfDay(existing.startAt) : '');
   const [end, setEnd] = useState(existing?.endAt ? timeOfDay(existing.endAt) : '');
   const [goalId, setGoalId] = useState(existing?.goalId ?? '');
@@ -52,10 +51,8 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
   const goals = snapshot.goals.filter((g) => !g.archived || g.id === goalId);
   const timerActive = !!snapshot.timer;
 
-  const setDuration = (totalMin: number) => {
-    setHours(String(Math.floor(totalMin / 60)));
-    setMinutes(String(totalMin % 60));
-  };
+  const setDuration = (totalMin: number) => setDur(toClockInput(totalMin));
+  const parsedDur = parseClockInput(dur);
 
   /** Al completar inicio y final, la duración se rellena con el intervalo. */
   const setTimes = (s: string, e: string) => {
@@ -69,11 +66,15 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
 
   const save = async () => {
     if (busy) return;
-    const typed = Math.round((Number(hours || 0) * 60 + Number(minutes || 0)) * 60);
+    if (parsedDur === null) return setErrors(['Duración no válida: usa H:MM (los minutos van de 00 a 59).']);
+    const typed = parsedDur;
     let durationSeconds = typed;
     let startAt: string | undefined;
     let endAt: string | undefined;
     const errs: string[] = [];
+    if (!typed && !start && !end && !lockedTimes) {
+      return setErrors(['Indica la duración o la hora de inicio y fin.']);
+    }
     if (start || end || lockedTimes) {
       if (!range) errs.push('Indica hora de inicio y final distintas, o deja ambas vacías.');
       else {
@@ -183,10 +184,19 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
 
         {tab === 'new' && (
           <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Horas">{(fid) => <Input id={fid} type="number" inputMode="numeric" min={0} max={24} value={hours} onChange={(e) => setHours(e.target.value)} placeholder="0" />}</Field>
-              <Field label="Minutos">{(fid) => <Input id={fid} type="number" inputMode="numeric" min={0} max={59} value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder="0" />}</Field>
-            </div>
+            <Field label="Duración · opcional" hint={parsedDur ? `= ${formatDuration(parsedDur)}` : 'Formato H:MM. Ej.: 130 → 1:30'}>
+              {(fid) => (
+                <Input
+                  id={fid}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="0:00"
+                  value={dur}
+                  onChange={(e) => setDur(maskClockInput(e.target.value))}
+                  className="max-w-[10rem] text-center font-mono text-2xl tabular-nums sm:text-2xl"
+                />
+              )}
+            </Field>
             <div className="flex flex-wrap gap-2">
               {QUICK.map((m) => (
                 <button key={m} type="button" onClick={() => setDuration(m)} className="min-h-10 rounded-full border border-line px-3.5 text-sm hover:bg-surface2">
@@ -198,6 +208,7 @@ function EntryFormInner({ req }: { req: EntryFormRequest }) {
               <Field label={lockedTimes ? 'Hora inicio' : 'Hora inicio · opcional'}>{(fid) => <Input id={fid} type="time" value={start} onChange={(e) => setTimes(e.target.value, end)} />}</Field>
               <Field label={lockedTimes ? 'Hora fin' : 'Hora fin · opcional'}>{(fid) => <Input id={fid} type="time" value={end} onChange={(e) => setTimes(start, e.target.value)} />}</Field>
             </div>
+            {!range && <p className="text-xs text-muted">Rellena la duración, el horario o ambos.</p>}
             {range && (
               <p className="text-sm text-muted">
                 Intervalo <strong className="text-fg">{formatDuration(range.seconds)}</strong>

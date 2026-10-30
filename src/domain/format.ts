@@ -43,3 +43,24 @@ export function formatDateTime(iso: string, use24h: boolean): string {
   const d = new Date(iso);
   return `${d.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' })} ${formatTime(iso, use24h)}`;
 }
+
+/**
+ * Campo de duración tipo reloj. Solo dígitos; con 3-4 dígitos se lee H:MM
+ * ("130" → 1:30), con 1-2 dígitos son minutos ("45" → 0:45).
+ */
+export function maskClockInput(raw: string): string {
+  const d = raw.replace(/\D/g, '').replace(/^0+(?=\d{3})/, '').slice(0, 4);
+  return d.length >= 3 ? `${d.slice(0, -2)}:${d.slice(-2)}` : d;
+}
+
+/** Segundos, 0 si vacío, null si no es válido. */
+export function parseClockInput(v: string): number | null {
+  const d = v.replace(/\D/g, '');
+  if (!d) return 0;
+  const h = d.length >= 3 ? Number(d.slice(0, -2)) : 0;
+  const m = Number(d.slice(-2));
+  if (d.length >= 3 && m > 59) return null;
+  return (h * 60 + m) * 60;
+}
+
+export const toClockInput = (totalMin: number) => (totalMin ? `${Math.floor(totalMin / 60)}:${pad(totalMin % 60)}` : '');
