@@ -95,15 +95,23 @@ function Shell() {
         >
           <Icon name="plus" size={18} /> Nuevo registro
         </button>
-        <div className="mt-auto">
-          <TimerBar variant="sidebar" />
-        </div>
       </aside>
 
+      <div className="min-w-0 flex-1">
+      {hasTimer && (
+        <div
+          className="sticky top-0 z-30 border-b border-line bg-bg/90 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] backdrop-blur lg:px-8"
+          style={{ paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))', paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))' }}
+        >
+          <div className="mx-auto max-w-7xl">
+            <TimerBar />
+          </div>
+        </div>
+      )}
       <main
         className={cx(
-          'mx-auto w-full min-w-0 max-w-7xl px-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] lg:px-8 lg:pb-10 lg:pt-8',
-          hasTimer ? 'pb-48' : 'pb-32',
+          'mx-auto w-full min-w-0 max-w-7xl px-4 pb-32 lg:px-8 lg:pb-10',
+          hasTimer ? 'pt-4 lg:pt-6' : 'pt-[calc(1rem+env(safe-area-inset-top,0px))] lg:pt-8',
         )}
         style={{ paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))', paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))' }}
       >
@@ -116,11 +124,12 @@ function Shell() {
         {mod === 'analisis' && <AnalysisView />}
         {mod === 'configuracion' && <SettingsView />}
       </main>
+      </div>
 
-      {/* Móvil: FAB + temporizador + navegación inferior */}
+      {/* Móvil: FAB + navegación inferior */}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden">
         <div className="pointer-events-auto flex flex-col gap-2 px-3 pb-2" style={{ paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))', paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))' }}>
-          {mod === 'registro' && !hasTimer && (
+          {mod === 'registro' && (
             <button
               type="button"
               aria-label="Nuevo registro"
@@ -129,23 +138,6 @@ function Shell() {
             >
               <Icon name="plus" size={26} />
             </button>
-          )}
-          {hasTimer && (
-            <div className="flex items-end gap-2">
-              <div className="min-w-0 flex-1">
-                <TimerBar variant="mobile" />
-              </div>
-              {mod === 'registro' && (
-                <button
-                  type="button"
-                  aria-label="Nuevo registro"
-                  onClick={() => ui.openEntryForm({})}
-                  className="flex h-[3.75rem] w-14 shrink-0 items-center justify-center rounded-2xl bg-accent text-accentfg shadow-lg"
-                >
-                  <Icon name="plus" size={24} />
-                </button>
-              )}
-            </div>
           )}
         </div>
         <nav

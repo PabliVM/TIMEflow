@@ -117,7 +117,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
       {toastMsg && (
         <div
           role="status"
-          className="pointer-events-none fixed inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top,0px))] z-[60] flex justify-center px-4"
+          className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-[60] flex justify-center px-4 lg:bottom-8"
         >
           <div className="rounded-full bg-fg px-4 py-2 text-sm font-medium text-bg shadow-lg animate-fade">{toastMsg}</div>
         </div>

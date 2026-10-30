@@ -2,9 +2,13 @@ import { uuid } from './ids';
 import type { Activity, Category, Snapshot, Subactivity } from './types';
 import { DEFAULT_SETTINGS, SCHEMA_VERSION } from './types';
 
+export const SEED_VERSION = 2;
+
 /** Estructura inicial de categorías (configuración, no registros). */
 const TREE: [string, string, [string, string[]][]][] = [
-  ['Desarrollo profesional', '#3F76D9', [['Programación', ['SAVEQ', 'YourDate']], ['Trabajo', ['Reuniones']]]],
+  ['App RM', '#3F76D9', []],
+  ['App PV', '#2C8FB0', []],
+  ['RM', '#8A7A12', []],
   ['Idiomas', '#C9761F', [['Inglés', ['Reading', 'Speaking']], ['Francés', ['Vocabulario']]]],
   ['Actividad física', '#1F8F75', [['Gimnasio', ['Pecho', 'Tríceps', 'Hombros']], ['Calistenia', ['Muscle-up', 'Handstand']]]],
   ['Ocio', '#7A5CCF', [['Golf', ['Campo', 'Práctica']], ['Lectura', []]]],
@@ -17,7 +21,7 @@ export function buildSeed(now = new Date()): Snapshot {
   const categories: Category[] = [];
   const activities: Activity[] = [];
   const subactivities: Subactivity[] = [];
-  const settings = { ...DEFAULT_SETTINGS };
+  const settings = { ...DEFAULT_SETTINGS, seedVersion: SEED_VERSION };
   TREE.forEach(([name, color, acts], ci) => {
     const c: Category = { ...base, id: uuid(), name, color, sortOrder: ci };
     categories.push(c);

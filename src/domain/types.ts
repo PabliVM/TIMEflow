@@ -119,6 +119,8 @@ export interface Settings {
   sleepCategoryId?: ID;
   sleepActivityId?: ID;
   sleepSubactivityId?: ID;
+  /** Versión de la estructura inicial aplicada (migraciones de categorías). */
+  seedVersion?: number;
 }
 
 export interface Snapshot {

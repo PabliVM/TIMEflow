@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { applyOps, createRepository } from '@/data';
+import { migrationOps } from '@/data/migrations';
 import type { Op, Repository } from '@/data';
 import { groupSubsByEntry } from '@/domain/entries';
 import { buildLookup, bySort, isDuplicateName, nextSortOrder, normalizeName } from '@/domain/hierarchy';
@@ -76,6 +77,11 @@ export function StoreProvider({ children, fallback }: { children: ReactNode; fal
     if (!s) {
       s = buildSeed();
       await r.replaceAll(s);
+    }
+    const ops = migrationOps(s);
+    if (ops.length) {
+      await r.apply(ops);
+      s = applyOps(s, ops);
     }
     setSnapshot(s);
   }, []);

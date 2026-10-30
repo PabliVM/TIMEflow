@@ -106,3 +106,18 @@ test('IndexedDB: persiste y aplica operaciones atómicas', async () => {
   assert.equal(applyOps(s, ops).entries.length, 1);
   assert.equal(loaded.categories.length, s.categories.length);
 });
+
+test('migración v2: quita Desarrollo profesional sin registros y crea App RM, App PV, RM', async () => {
+  const { migrationOps } = await import('../data/migrations');
+  const s = buildSeed();
+  const legacy = { ...s, settings: { ...s.settings, seedVersion: 1 }, categories: [...s.categories, { ...s.categories[0], id: 'old', name: 'Desarrollo profesional' }] };
+  legacy.categories = legacy.categories.filter((c) => !['App RM', 'App PV', 'RM'].includes(c.name));
+  const out = applyOps(legacy, migrationOps(legacy));
+  const names = out.categories.map((c) => c.name);
+  assert.ok(!names.includes('Desarrollo profesional'));
+  assert.ok(['App RM', 'App PV', 'RM'].every((n) => names.includes(n)));
+  assert.equal(migrationOps(out).length, 0);
+  const used = { ...legacy, entries: [entry({ categoryId: 'old' })] };
+  const out2 = applyOps(used, migrationOps(used));
+  assert.equal(out2.categories.find((c) => c.id === 'old')?.archived, true);
+});

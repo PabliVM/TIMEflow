@@ -39,15 +39,15 @@ function useTimerControls() {
   };
 }
 
-/** Barra compacta visible desde cualquier módulo. */
-export function TimerBar({ variant }: { variant: 'mobile' | 'sidebar' }) {
+/** Cronómetro fijo arriba, visible desde cualquier pantalla. */
+export function TimerBar() {
   const { snapshot, lookup } = useStore();
   const t = snapshot.timer;
   if (!t) return null;
-  return <TimerBarInner t={t} color={categoryColor(lookup, t.draft.categoryId)} variant={variant} />;
+  return <TimerBarInner t={t} color={categoryColor(lookup, t.draft.categoryId)} />;
 }
 
-function TimerBarInner({ t, color, variant }: { t: TimerState; color: string; variant: 'mobile' | 'sidebar' }) {
+function TimerBarInner({ t, color }: { t: TimerState; color: string }) {
   const now = useNow(t.status === 'running');
   const label = useTimerLabel(t);
   const c = useTimerControls();
@@ -56,11 +56,8 @@ function TimerBarInner({ t, color, variant }: { t: TimerState; color: string; va
   const paused = t.status === 'paused';
   return (
     <div
-      className={cx(
-        'flex items-center gap-2 border border-line bg-surface shadow-lg',
-        variant === 'mobile' ? 'rounded-2xl p-1.5 pl-3' : 'rounded-2xl p-2 pl-3',
-      )}
-      style={{ boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${color} 35%, transparent)` }}
+      className="flex items-center gap-2 rounded-2xl border bg-surface p-1.5 pl-3 shadow-md"
+      style={{ borderColor: `color-mix(in srgb, ${color} 55%, rgb(var(--line)))` }}
     >
       <button type="button" onClick={() => setTimerOpen(true)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 text-left">
         <span className={cx('h-2.5 w-2.5 shrink-0 rounded-full', !paused && 'animate-pulse')} style={{ background: color }} />
@@ -68,10 +65,12 @@ function TimerBarInner({ t, color, variant }: { t: TimerState; color: string; va
           <span className="block truncate text-sm font-semibold">{label}</span>
           <span className="block text-xs text-muted">{paused ? 'En pausa' : t.mode === 'pomodoro' ? 'Pomodoro' : 'En curso'}</span>
         </span>
-        <span className="font-mono text-base font-semibold tabular-nums">{formatClock(remaining ?? elapsedSeconds(t, now))}</span>
+        <span className="font-mono text-lg font-semibold tabular-nums">{formatClock(remaining ?? elapsedSeconds(t, now))}</span>
       </button>
       {paused ? <IconButton icon="play" label="Reanudar" onClick={c.resume} variant="secondary" /> : <IconButton icon="pause" label="Pausar" onClick={c.pause} variant="secondary" />}
-      <IconButton icon="stop" label="Finalizar" onClick={c.finish} variant="primary" />
+      <Button icon="stop" variant="primary" onClick={c.finish} aria-label="Finalizar" className="px-3">
+        Finalizar
+      </Button>
     </div>
   );
 }
