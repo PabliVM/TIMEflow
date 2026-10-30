@@ -139,9 +139,11 @@ test('campo de duración tipo reloj', async () => {
 test('migración v3 sobre datos en v2: añade Casita sin duplicar', async () => {
   const { migrationOps } = await import('../data/migrations');
   const s = buildSeed();
-  const v2data = { ...s, settings: { ...s.settings, seedVersion: 2 }, categories: s.categories.filter((c) => c.name !== 'Casita') };
+  const v2data = { ...s, settings: { ...s.settings, seedVersion: 2 }, categories: s.categories.filter((c) => c.name !== 'Casita' && c.name !== 'Conducir') };
   const out = applyOps(v2data, migrationOps(v2data));
   assert.equal(out.categories.filter((c) => c.name === 'Casita').length, 1);
-  assert.equal(out.settings.seedVersion, 3);
+  assert.equal(out.settings.seedVersion, 4);
+  const conducir = out.categories.find((c) => c.name === 'Conducir')!;
+  assert.ok(out.activities.some((a) => a.categoryId === conducir.id && a.name === 'Al trabajo'));
   assert.equal(out.categories.filter((c) => c.name === 'App RM').length, 1);
 });

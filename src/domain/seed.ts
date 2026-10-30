@@ -2,7 +2,7 @@ import { uuid } from './ids';
 import type { Activity, Category, Snapshot, Subactivity } from './types';
 import { DEFAULT_SETTINGS, SCHEMA_VERSION } from './types';
 
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 4;
 
 /** Estructura inicial de categorías (configuración, no registros). */
 const TREE: [string, string, [string, string[]][]][] = [
@@ -13,6 +13,7 @@ const TREE: [string, string, [string, string[]][]][] = [
   ['Actividad física', '#1F8F75', [['Gimnasio', ['Pecho', 'Tríceps', 'Hombros']], ['Calistenia', ['Muscle-up', 'Handstand']]]],
   ['Ocio', '#7A5CCF', [['Golf', ['Campo', 'Práctica']], ['Lectura', []]]],
   ['Casita', '#9A5B2E', [['Manuela', []], ['Laura', []]]],
+  ['Conducir', '#5E6E8C', [['Al trabajo', []]]],
   ['Descanso', '#B0485A', [['Sueño', ['Nocturno']], ['Recuperación', ['Siesta']]]],
 ];
 

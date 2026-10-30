@@ -13,6 +13,7 @@ export function migrationOps(s: Snapshot, now = new Date().toISOString()): Op[] 
   const ops: Op[] = [];
   if (version < 2) ops.push(...v2(s, now));
   if (version < 3) ops.push(...v3(s, now));
+  if (version < 4) ops.push(...v4(s, now));
   ops.push({ type: 'put', store: 'settings', value: { ...s.settings, seedVersion: SEED_VERSION } });
   return ops;
 }
@@ -65,6 +66,28 @@ function v3(s: Snapshot, now: string): Op[] {
   for (const name of ['Manuela', 'Laura']) {
     if (acts.some((a) => lower(a.name) === lower(name))) continue;
     ops.push({ type: 'put', store: 'activities', value: { id: uuid(), categoryId, name, sortOrder: order++, archived: false, createdAt: now, updatedAt: now } });
+  }
+  return ops;
+}
+
+/** Ids fijos: si varios dispositivos aplican la migración, la sincronización no duplica. */
+const CONDUCIR_ID = '7c3a1d2e-4b5f-4a6c-9d8e-0f1a2b3c4d01';
+const AL_TRABAJO_ID = '7c3a1d2e-4b5f-4a6c-9d8e-0f1a2b3c4d02';
+
+/** v4: categoría Conducir con la actividad Al trabajo. */
+function v4(s: Snapshot, now: string): Op[] {
+  const ops: Op[] = [];
+  let cat = s.categories.find((c) => lower(c.name) === 'conducir');
+  if (!cat) {
+    const sortOrder = s.categories.reduce((m, c) => Math.max(m, c.sortOrder), -1) + 1;
+    cat = { id: CONDUCIR_ID, name: 'Conducir', color: CATEGORY_COLORS[7], sortOrder, archived: false, createdAt: now, updatedAt: now };
+    ops.push({ type: 'put', store: 'categories', value: cat });
+  }
+  const categoryId = cat.id;
+  const acts = s.activities.filter((a) => a.categoryId === categoryId);
+  if (!acts.some((a) => lower(a.name) === 'al trabajo')) {
+    const sortOrder = acts.reduce((m, a) => Math.max(m, a.sortOrder), -1) + 1;
+    ops.push({ type: 'put', store: 'activities', value: { id: AL_TRABAJO_ID, categoryId, name: 'Al trabajo', sortOrder, archived: false, createdAt: now, updatedAt: now } });
   }
   return ops;
 }
