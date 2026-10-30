@@ -18,7 +18,12 @@
   --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
   --font-body: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --scrim: transparent;
   color-scheme: light;
+}
+
+:root[data-bg='flowers'] {
+  --bg: 248 235 219;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,6 +39,7 @@
     --accent-fg: 6 30 24;
     --danger: 238 108 98;
     --warn: 224 170 60;
+    --scrim: rgb(13 17 16 / 0.84);
     color-scheme: dark;
   }
 }
@@ -50,22 +56,45 @@
   --accent-fg: 6 30 24;
   --danger: 238 108 98;
   --warn: 224 170 60;
+  --scrim: rgb(13 17 16 / 0.84);
   color-scheme: dark;
 }
 
 html,
 body {
-  background: rgb(var(--bg));
   color: rgb(var(--fg));
 }
 
+html {
+  background: rgb(var(--bg));
+}
+
 body {
-  background-image: var(--pattern);
-  background-attachment: fixed;
+  background: transparent;
   margin: 0;
   font-family: var(--font-body);
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
+}
+
+/* Fondo elegido en Preferencias (data-bg en <html>): capa fija detrás del contenido. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--pattern);
+}
+
+:root[data-bg='plain'] body::after {
+  background-image: none;
+}
+
+:root[data-bg='flowers'] body::after {
+  background-image: linear-gradient(var(--scrim), var(--scrim)), url('/backgrounds/flores.jpg');
+  background-size: cover;
+  background-position: left bottom;
 }
 
 h1, h2, h3 {

@@ -1,6 +1,6 @@
 // TIMEFLOW service worker: solo recursos estáticos de la app.
 // Los datos personales viven en IndexedDB y nunca pasan por esta caché.
-const CACHE = 'timeflow-v1';
+const CACHE = 'timeflow-v2';
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -35,7 +35,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Estáticos versionados de Next e iconos: caché primero.
-  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')) {
+  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/') || url.pathname.startsWith('/backgrounds/')) {
     event.respondWith(
       caches.match(req).then(
         (hit) =>

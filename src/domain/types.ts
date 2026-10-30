@@ -119,6 +119,7 @@ export interface Settings {
   sleepCategoryId?: ID;
   sleepActivityId?: ID;
   sleepSubactivityId?: ID;
+  background?: 'flowers' | 'stars' | 'plain';
   /** Versión de la estructura inicial aplicada (migraciones de categorías). */
   seedVersion?: number;
 }

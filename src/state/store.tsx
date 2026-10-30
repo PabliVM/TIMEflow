@@ -286,6 +286,11 @@ export function StoreProvider({ children, fallback }: { children: ReactNode; fal
     else root.setAttribute('data-theme', theme);
   }, [theme]);
 
+  const background = snapshot?.settings.background ?? 'flowers';
+  useEffect(() => {
+    document.documentElement.setAttribute('data-bg', background);
+  }, [background]);
+
   const derived = useMemo(
     () => (snapshot ? { lookup: buildLookup(snapshot), subsByEntry: groupSubsByEntry(snapshot.entrySubactivities) } : null),
     [snapshot],

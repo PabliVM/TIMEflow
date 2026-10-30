@@ -46,7 +46,7 @@ export function WeekView({ weekStart, byDate, today, onOpenDay }: { weekStart: I
             const total = list.reduce((a, e) => a + e.durationSeconds, 0);
             const isToday = d === today;
             return (
-              <section key={d} data-today={isToday} className={cx('flex min-w-0 flex-col gap-1.5 rounded-2xl border p-1.5', isToday ? 'border-accent/60 bg-accent/5' : 'border-line bg-surface')}>
+              <section key={d} data-today={isToday} className={cx('flex min-w-0 flex-col gap-1.5 rounded-2xl border p-1.5', isToday ? 'border-accent/60 bg-surface ring-1 ring-accent/30' : 'border-line bg-surface')}>
                 <button type="button" onClick={() => onOpenDay(d)} className="flex min-h-11 items-center gap-2 rounded-lg px-1.5 text-left hover:bg-surface2">
                   <span className={cx('flex h-8 w-8 items-center justify-center rounded-full font-display text-sm font-semibold', isToday && 'bg-accent text-accentfg')}>
                     {parseDateKey(d).getDate()}
