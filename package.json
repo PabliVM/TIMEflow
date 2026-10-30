@@ -8,10 +8,11 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/domain/*.test.ts",
+    "test": "tsx --test src/domain/*.test.ts src/data/*.test.ts",
     "preview": "node scripts/build-preview.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
     "next": "^15.5.28",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

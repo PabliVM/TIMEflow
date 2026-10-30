@@ -35,6 +35,8 @@ export interface Repository {
   /** Aplica todas las operaciones de forma atómica. */
   apply(ops: Op[]): Promise<void>;
   replaceAll(snapshot: Snapshot): Promise<void>;
+  /** Avisa cuando los datos cambian desde fuera (otro dispositivo). */
+  subscribe?(cb: () => void): () => void;
 }
 
 /** Aplica operaciones a un Snapshot en memoria (misma semántica que el repositorio). */

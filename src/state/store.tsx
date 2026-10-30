@@ -92,6 +92,7 @@ export function StoreProvider({ children, fallback }: { children: ReactNode; fal
       if (!alive) return;
       setRepo(r);
       await reload(r);
+      r.subscribe?.(() => reload(r));
       if (typeof BroadcastChannel !== 'undefined') {
         channel.current = new BroadcastChannel('timeflow');
         channel.current.onmessage = () => reload(r);

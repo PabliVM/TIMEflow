@@ -14,7 +14,12 @@ const js = await build({
   format: 'iife',
   jsx: 'automatic',
   target: 'es2020',
-  define: { 'process.env.NODE_ENV': '"production"' },
+  define: {
+    'process.env.NODE_ENV': '"production"',
+    'process.env.NEXT_PUBLIC_SUPABASE_URL': 'undefined',
+    'process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY': 'undefined',
+    'process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY': 'undefined',
+  },
 });
 execSync('npx tailwindcss -i src/app/globals.css -o preview/app.css --minify', { stdio: 'inherit' });
 const bosque = `data:image/jpeg;base64,${readFileSync('public/backgrounds/bosque.jpg').toString('base64')}`;

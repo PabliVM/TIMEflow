@@ -13,6 +13,7 @@ import { downloadFile } from '../hooks';
 import { Icon } from '../icons';
 import { Button, Card, Field, IconButton, Input, Segmented, Select, Sheet, cx } from '../primitives';
 import { useUI } from '../ui-context';
+import { SyncCard } from './SyncCard';
 
 type Tab = 'categories' | 'goals' | 'prefs' | 'data';
 type Node = Category | Activity | Subactivity;
@@ -258,6 +259,7 @@ function DataTab() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
+      <SyncCard />
       <Card title="Exportar">
         <p className="mb-3 text-sm text-muted">{snapshot.entries.length} registros · {snapshot.categories.length} categorías · {snapshot.goals.length} objetivos.</p>
         <div className="flex flex-wrap gap-2">
