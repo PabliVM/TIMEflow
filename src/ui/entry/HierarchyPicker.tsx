@@ -128,6 +128,8 @@ export function HierarchyPicker({ value, onChange, showSubDurations = true }: { 
         </div>
       </Level>
 
+      {/* Subactividades ocultas al registrar; solo visibles si el registro ya las tiene. */}
+      {value.subs.length > 0 && (
       <Level depth={2} color={color} title={actName ? `Subactividades de ${actName}` : 'Subactividades'} note="opcional, varias" locked={!value.activityId ? 'Elige primero una actividad.' : undefined}>
         <div className="flex flex-wrap gap-2">
           {subs.map((s) => (
@@ -170,6 +172,7 @@ export function HierarchyPicker({ value, onChange, showSubDurations = true }: { 
             </div>
           )}
       </Level>
+      )}
     </div>
   );
 }
