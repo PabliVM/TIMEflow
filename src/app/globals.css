@@ -18,12 +18,8 @@
   --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
   --font-body: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --scrim: transparent;
+  --scrim: rgb(255 255 255 / 0.15);
   color-scheme: light;
-}
-
-:root[data-bg='flowers'] {
-  --bg: 248 235 219;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,7 +35,7 @@
     --accent-fg: 6 30 24;
     --danger: 238 108 98;
     --warn: 224 170 60;
-    --scrim: rgb(13 17 16 / 0.84);
+    --scrim: rgb(13 17 16 / 0.8);
     color-scheme: dark;
   }
 }
@@ -56,7 +52,7 @@
   --accent-fg: 6 30 24;
   --danger: 238 108 98;
   --warn: 224 170 60;
-  --scrim: rgb(13 17 16 / 0.84);
+  --scrim: rgb(13 17 16 / 0.8);
   color-scheme: dark;
 }
 
@@ -91,10 +87,10 @@ body::after {
   background-image: none;
 }
 
-:root[data-bg='flowers'] body::after {
-  background-image: linear-gradient(var(--scrim), var(--scrim)), url('/backgrounds/flores.jpg');
+:root[data-bg='forest'] body::after {
+  background-image: linear-gradient(var(--scrim), var(--scrim)), url('/backgrounds/bosque.svg');
   background-size: cover;
-  background-position: left bottom;
+  background-position: center bottom;
 }
 
 h1, h2, h3 {

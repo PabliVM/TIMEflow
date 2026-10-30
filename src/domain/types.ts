@@ -119,7 +119,8 @@ export interface Settings {
   sleepCategoryId?: ID;
   sleepActivityId?: ID;
   sleepSubactivityId?: ID;
-  background?: 'flowers' | 'stars' | 'plain';
+  /** Valores no reconocidos (p. ej. 'flowers' antiguo) se tratan como 'forest'. */
+  background?: 'forest' | 'stars' | 'plain' | 'flowers';
   /** Versión de la estructura inicial aplicada (migraciones de categorías). */
   seedVersion?: number;
 }

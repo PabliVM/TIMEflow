@@ -17,8 +17,8 @@ const js = await build({
   define: { 'process.env.NODE_ENV': '"production"' },
 });
 execSync('npx tailwindcss -i src/app/globals.css -o preview/app.css --minify', { stdio: 'inherit' });
-const flores = `data:image/jpeg;base64,${readFileSync('public/backgrounds/flores.jpg').toString('base64')}`;
-const css = readFileSync('preview/app.css', 'utf8').replace(/\/backgrounds\/flores\.jpg/g, flores);
+const bosque = `data:image/svg+xml;base64,${readFileSync('public/backgrounds/bosque.svg').toString('base64')}`;
+const css = readFileSync('preview/app.css', 'utf8').replace(/\/backgrounds\/bosque\.svg/g, bosque);
 const code = js.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 
 writeFileSync(

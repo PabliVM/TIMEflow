@@ -201,7 +201,7 @@ function PrefsTab() {
             {() => <Segmented value={s.theme} onChange={(theme) => updateSettings({ theme })} options={[{ value: 'system', label: 'Sistema' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]} />}
           </Field>
           <Field label="Fondo">
-            {() => <Segmented value={s.background ?? 'flowers'} onChange={(background) => updateSettings({ background })} options={[{ value: 'flowers', label: 'Flores' }, { value: 'stars', label: 'Estrellas' }, { value: 'plain', label: 'Liso' }]} />}
+            {() => <Segmented value={s.background === 'stars' || s.background === 'plain' ? s.background : 'forest'} onChange={(background) => updateSettings({ background })} options={[{ value: 'forest', label: 'Bosque' }, { value: 'stars', label: 'Estrellas' }, { value: 'plain', label: 'Liso' }]} />}
           </Field>
           <Field label="Actividad de sueño" hint="Se usa por defecto en el registro de sueño.">
             {(id) => (

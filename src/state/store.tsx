@@ -286,7 +286,8 @@ export function StoreProvider({ children, fallback }: { children: ReactNode; fal
     else root.setAttribute('data-theme', theme);
   }, [theme]);
 
-  const background = snapshot?.settings.background ?? 'flowers';
+  const bg = snapshot?.settings.background;
+  const background = bg === 'stars' || bg === 'plain' ? bg : 'forest';
   useEffect(() => {
     document.documentElement.setAttribute('data-bg', background);
   }, [background]);
