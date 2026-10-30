@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Layout: app de una columna en móvil con navegación inferior; barra lateral + rejilla en escritorio. */
+:root {
+  --bg: 245 247 246;
+  --surface: 255 255 255;
+  --surface-2: 236 240 238;
+  --fg: 21 29 27;
+  --muted: 95 109 105;
+  --line: 219 225 222;
+  --accent: 13 118 98;
+  --accent-fg: 255 255 255;
+  --danger: 190 48 45;
+  --warn: 176 112 0;
+  --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: 13 17 16;
+    --surface: 21 27 26;
+    --surface-2: 31 39 37;
+    --fg: 228 235 232;
+    --muted: 146 160 156;
+    --line: 43 53 51;
+    --accent: 74 196 165;
+    --accent-fg: 6 30 24;
+    --danger: 238 108 98;
+    --warn: 224 170 60;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: 13 17 16;
+  --surface: 21 27 26;
+  --surface-2: 31 39 37;
+  --fg: 228 235 232;
+  --muted: 146 160 156;
+  --line: 43 53 51;
+  --accent: 74 196 165;
+  --accent-fg: 6 30 24;
+  --danger: 238 108 98;
+  --warn: 224 170 60;
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+input[type='number']::-webkit-inner-spin-button {
+  opacity: 0.4;
+}
+
+@keyframes tf-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes tf-sheet { from { transform: translateY(24px); opacity: 0.6 } to { transform: none; opacity: 1 } }
+@keyframes tf-spin { to { transform: rotate(360deg) } }
+
+.animate-fade { animation: tf-fade 0.18s ease-out; }
+.animate-sheet { animation: tf-sheet 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.animate-spin-slow { animation: tf-spin 6s linear infinite; transform-box: fill-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+.recharts-text { fill: rgb(var(--muted)); font-size: 11px; }
+.recharts-cartesian-grid line { stroke: rgb(var(--line)); }
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--line)) !important;
+  border-radius: 12px;
+  color: rgb(var(--fg));
+  font-size: 12px;
+}
