@@ -93,6 +93,22 @@ body::after {
   background-position: center bottom;
 }
 
+/* iOS: los campos de fecha/hora ignoran el ancho del contenedor si no se resetean. */
+input[type='date'],
+input[type='time'],
+input[type='datetime-local'] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
+}
+
+input::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 h1, h2, h3 {
   text-wrap: balance;
 }

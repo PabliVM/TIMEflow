@@ -1,6 +1,6 @@
 // TIMEFLOW service worker: solo recursos estáticos de la app.
 // Los datos personales viven en IndexedDB y nunca pasan por esta caché.
-const CACHE = 'timeflow-v4';
+const CACHE = 'timeflow-v5';
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
